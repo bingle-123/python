@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.html": "html",
+        "stdio.h": "c",
+        "cstdio": "c",
+        "limits.h": "c",
+        "climits": "c",
+        "algorithm": "c",
+        "__bit_reference": "c",
+        "bitset": "c",
+        "chrono": "c",
+        "string.h": "c"
+    }
+}

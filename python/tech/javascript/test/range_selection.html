@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<style>
+    .label {
+        padding: 0 2px 0 2px;
+        font-weight: bold
+    }
+
+    #editor {
+        border: solid silver 1px;
+        border-radius: 5px;
+        padding: 10px;
+    }
+
+    #editor:focus {
+        outline: none
+    }
+
+    #item-list {
+        position: fixed;
+        z-index: 100;
+        display: none
+    }
+</style>
+
+<body>
+    <button type="button" click="insert()">test</button>
+    <button type="button" click="insert()">test</button>
+    <div contenteditable="true" id="editor">
+        afasdfasd
+        <span>span</span> asfda
+        <span>aspan</span> asdfas
+    </div>
+    <button type="button" click="insert()">test</button>
+    <button type="button" click="insert()">test</button>
+    <button type="button" click="insert()">test</button>
+    <button type="button" click="insert()">test</button>
+    <ul id="item-list">
+        <li>1</li>
+        <li>2</li>
+        <li>3</li>
+        <li>4</li>
+    </ul>
+</body>
+<script>
+    // 当用户按下#键时,启用监听模式
+    // 用户点击删除按键时,判断要删除的是不是一个tag,如果是tag那么要删除tag
+    // 当进入监听模式时,用户每次点击都会出发tag过滤,将过滤出来的tag作为悬浮列表,用户使用上下键+Enter,或者鼠标选择一个tag,
+    // 然后将tag代表的数字装入一个span中,并将其添加到当前光标出,关闭监听模式
+
+    // 监听事件
+    // 鼠标点击:如果鼠标点击到span上面,那么选中整个span,此时如果用户点击键盘,按下字母或者数字键,那么应该删除整个span,并把用户的输入填充进来
+    let tags = []
+    i = 0
+    while (i < 20) {
+        i += 1
+        tags.push({ name: i.toString(), value: 'value_' + i })
+    }
+    function insert() {
+        var selection = window.getSelection()
+    }
+    function match_tags(tag_name) {
+        // 获取当前光标
+        for (let tag of tags) {
+            if (tag_name === tag.name) {
+                return tag.value
+            }
+        }
+        return false
+    }
+    function index_before(str, substr, position) {
+        // 找出在position之前的第一个sbustr位置
+        let index = -1
+        let last = -1
+        let indexs = []
+        while (index < position) {
+            last = index
+            index = str.indexOf(substr, index + 1)
+            if (index === -1) {
+                break
+            }
+        }
+        return last
+    }
+    function show_items(top, left) {
+        let items = document.getElementById('item-list')
+        items.style.top = top + 'px'
+        items.style.left = left + 'px'
+        items.style.display = 'block'
+
+    }
+    let editor = document.getElementById('editor')
+    let moniting = false
+    let tag_name = ''
+    let show_list = false
+    let selected_span = false
+    let current_value = 0
+    function get_current_value(e) {
+        //获取光标位置,到光标之前第一个#的文字
+        let selection = window.getSelection()
+        range = selection.getRangeAt(0)
+        let anchornode = selection.anchorNode
+        let offset = selection.anchorOffset
+        selection.setPosition(anchornode, offset)
+        let text = selection.anchorNode.textContent
+        let last_sharp_index = index_before(text, '#', offset)
+        console.log(last_sharp_index)
+        //console.log(text)
+        //console.log(offset)
+        if (last_sharp_index != -1) {
+            let filter_str = text.substring(last_sharp_index + 1, offset)
+            let current_value = match_tags(filter_str)
+            console.log(current_value)
+            return current_value
+        }
+        return false
+    }
+    editor.addEventListener('keyup', (e) => {
+        //如果点击的是span标签,选中整个span,
+        let selection = window.getSelection()
+        range = selection.getRangeAt(0)
+        if (e.key === 'ArrowLeft') {
+            if (selection.anchorNode.parentElement.tagName === 'SPAN' && length != selection.anchorOffset) {
+                selection.removeAllRanges()
+                selection.addRange(range)
+                let anchornode = selection.anchorNode
+                let text = selection.anchorNode.textContent
+                let length = text.length
+                range.setStart(anchornode, 0)
+                range.setEnd(anchornode, 0)
+                selected_span = true
+            }
+            e.preventDefault()
+        }
+        else if (e.key === 'ArrowRight') {
+            if (selection.anchorNode.parentElement.tagName === 'SPAN') {
+                selection.removeAllRanges()
+                selection.addRange(range)
+                let anchornode = selection.anchorNode
+                let text = selection.anchorNode.textContent
+                let length = text.length
+                range.setStart(anchornode, length)
+                range.setEnd(anchornode, length)
+                selected_span = true
+            }
+            e.preventDefault()
+        }
+
+    })
+    editor.addEventListener('keydown', (e) => {
+        console.log(e.key)
+
+        if (e.key === '#') {
+            //如果按下# 显示tags列表
+            show_list = true
+            let selection = window.getSelection()
+            let range = selection.getRangeAt(0)
+            let postion = range.getBoundingClientRect()
+            show_items(postion.top, postion.left)
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+            //如果点击的是span标签,选中整个span,
+            let selection = window.getSelection()
+            range = selection.getRangeAt(0)
+            let anchornode = selection.anchorNode
+            let text = selection.anchorNode.textContent
+            let length = text.length
+            if (selection.anchorNode.parentElement.tagName === 'SPAN') {
+                range.setStart(anchornode, 0)
+                range.setEnd(anchornode, length)
+                range.commonAncestorContainer.parentElement.remove()
+                e.preventDefault()
+            }
+        }
+        else if (e.key === 'Enter') {
+            let current_value = get_current_value(e)
+            console.log(current_value)
+            if (current_value) {
+                let span = document.createElement('span')
+                span.innerHTML = current_value
+                span.className = 'label'
+                let selection = window.getSelection()
+                range = selection.getRangeAt(0)
+
+                //删除光标到#的字符
+                let anchornode = selection.anchorNode
+                let offset = selection.anchorOffset
+                selection.setPosition(anchornode, offset)
+                let text = selection.anchorNode.textContent
+                let last_sharp_index = index_before(text, '#', offset)
+                range.setStart(anchornode, last_sharp_index)
+                range.setEnd(anchornode, offset)
+                range.deleteContents()
+                //清楚掉
+                selection.removeAllRanges()
+                let text_node = document.createElement('text')
+                text_node.innerHTML = '&nbsp;'
+                let before_text_node = document.createElement('text')
+                before_text_node.innerHTML = '&nbsp;'
+                //创建textnode放在span前后
+                range.insertNode(text_node)
+                range.insertNode(span)
+                range.insertNode(before_text_node)
+                // 设置光标到下一个text_node
+                range.setStart(text_node, 1)
+                range.setEnd(text_node, 1)
+                selection.addRange(range)
+                e.preventDefault()
+            }
+        }
+        else {
+            // get_current_value(e)
+            if (selected_span) {
+                let selection = window.getSelection()
+                range = selection.getRangeAt(0)
+                range.commonAncestorContainer.parentElement.remove()
+                selected_span = false
+            }
+        }
+    })
+    editor.addEventListener('click', (e) => {
+        //如果点击的是span标签,选中整个span,
+        let selection = window.getSelection()
+        range = selection.getRangeAt(0)
+        selection.removeAllRanges()
+        selection.addRange(range)
+        let anchornode = selection.anchorNode
+        let text = selection.anchorNode.textContent
+        let length = text.length
+        if (selection.anchorNode.parentElement.tagName === 'SPAN') {
+            range.setStart(anchornode, 0)
+            range.setEnd(anchornode, length)
+            selected_span = true
+        }
+    })
+
+</script>
+
+</html>
